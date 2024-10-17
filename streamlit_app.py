@@ -60,3 +60,10 @@ with j2:
 with j3:
     st.header("J3 league")
     st.dataframe(df_j3)
+
+
+# リセットボタン
+if st.button('Reset All Data'):
+    st.session_state['team_data'] = {'team_j1': [], 'team_j2': [], 'team_j3': []}
+    st.session_state['result_data'] = pd.DataFrame(0, index=players, columns=columns)
+    st.success('All data has been reset!')
