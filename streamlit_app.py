@@ -68,19 +68,23 @@ depoint = st.number_input("何点失点しましたか？？", value=0)
 
 if st.button('試合を記録する'):
     try:
-        df[name]["matches"] += 1
-        df[enemy]["matches"] += 1
-        df[name]["goal_difference"] += (point - depoint)
-        df[enemy]["goal_difference"] += (depoint - point)
-
-        if (point - depoint) > 0:
-            df[name]["points"] += 3
-        elif (point - depoint) < 0:
-            df[enemy]["points"] += 3
+        # プレイヤーがdfに存在するか確認
+        if name not in df.index or enemy not in df.index:
+            st.error(f"選択されたプレイヤー名 '{name}' または '{enemy}' が見つかりません。")
         else:
-            df[name]["points"] += 1
-            df[enemy]["points"] += 1
+            # 試合の記録処理
+            df.loc[name, "matches"] += 1
+            df.loc[enemy, "matches"] += 1
+            df.loc[name, "goal_difference"] += (point - depoint)
+            df.loc[enemy, "goal_difference"] += (depoint - point)
 
+            if (point - depoint) > 0:
+                df.loc[name, "points"] += 3
+            elif (point - depoint) < 0:
+                df.loc[enemy, "points"] += 3
+            else:
+                df.loc[name, "points"] += 1
+                df.loc[enemy, "points"] += 1
          #データベースに保存
         with conn:
             # 既存のデータを削除
