@@ -44,6 +44,17 @@ team_j1 = st.multiselect('Select players for Team J1:', players, default=team_j1
 team_j2 = st.multiselect('Select players for Team J2:', players, default=team_j2)
 team_j3 = st.multiselect('Select players for Team J3:', players, default=team_j3)
 
+# 結果データの読み込み
+df = pd.read_sql_query("SELECT * FROM results", conn, index_col="player")
+
+# 試合の記録
+league = st.selectbox("あなたの所属リーグを教えてください", ["j1", "j2", "j3"])
+team = {"team_j1": team_j1, "team_j2": team_j2, "team_j3": team_j3}
+name = st.selectbox("あなたの名前を教えてください", team["team_" + league])
+enemy = st.selectbox("相手の名前を教えてください", team["team_" + league])
+point = st.number_input("何点得点しましたか？？", value=0)
+depoint = st.number_input("何点失点しましたか？？", value=0)
+
 if st.button('試合を記録する'):
     try:
         # 試合の記録処理
