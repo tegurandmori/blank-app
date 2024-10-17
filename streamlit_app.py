@@ -5,7 +5,7 @@ import sqlite3
 # SQLiteデータベースに接続（なければ自動作成されます）
 conn = sqlite3.connect('lab_league.db')
 c = conn.cursor()
-
+"""
 # プレイヤーリスト
 players = ["まつか", "くま", "がい", "さとか", "やまし", "morning", "鬼", "teguramori", "はまじ", "おじ", "zkonma", "king", "ざき", "いと"]
 
@@ -105,3 +105,4 @@ with j3:
 
 # SQLite接続を閉じる
 conn.close()
+"""
