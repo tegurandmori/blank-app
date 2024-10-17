@@ -1,7 +1,3 @@
-import streamlit as st
-import pandas as pd
-import sqlite3
-
 # SQLiteデータベースに接続（なければ自動作成されます）
 conn = sqlite3.connect('lab_league.db')
 c = conn.cursor()
@@ -37,12 +33,22 @@ team_j1 = [row[0] for row in c.execute("SELECT player FROM teams WHERE team='j1'
 team_j2 = [row[0] for row in c.execute("SELECT player FROM teams WHERE team='j2'").fetchall()]
 team_j3 = [row[0] for row in c.execute("SELECT player FROM teams WHERE team='j3'").fetchall()]
 
-st.title("e-football lab league")
-
 # チーム選択
 team_j1 = st.multiselect('Select players for Team J1:', players, default=team_j1)
 team_j2 = st.multiselect('Select players for Team J2:', players, default=team_j2)
 team_j3 = st.multiselect('Select players for Team J3:', players, default=team_j3)
+
+if st.button('チームを保存'):
+    # チームデータを保存
+    c.execute("DELETE FROM teams")  # 既存のチームデータを削除
+    for player in team_j1:
+        c.execute("INSERT INTO teams (player, team) VALUES (?, 'j1')", (player,))
+    for player in team_j2:
+        c.execute("INSERT INTO teams (player, team) VALUES (?, 'j2')", (player,))
+    for player in team_j3:
+        c.execute("INSERT INTO teams (player, team) VALUES (?, 'j3')", (player,))
+    conn.commit()
+    st.success('チームが保存されました！')
 
 # 結果データの読み込み
 df = pd.read_sql_query("SELECT * FROM results", conn, index_col="player")
@@ -57,31 +63,31 @@ depoint = st.number_input("何点失点しましたか？？", value=0)
 
 if st.button('試合を記録する'):
     try:
-        # 試合の記録処理
-        df.loc[name, "matches"] += 1
-        df.loc[enemy, "matches"] += 1
-        df.loc[name, "goal_difference"] += (point - depoint)
-        df.loc[enemy, "goal_difference"] += (depoint - point)
+        df.at[name, "matches"] += 1
+        df.at[enemy, "matches"] += 1
+        df.at[name, "goal_difference"] += (point - depoint)
+        df.at[enemy, "goal_difference"] += (depoint - point)
 
         if (point - depoint) > 0:
-            df.loc[name, "points"] += 3
+            df.at[name, "points"] += 3
         elif (point - depoint) < 0:
-            df.loc[enemy, "points"] += 3
+            df.at[enemy, "points"] += 3
         else:
-            df.loc[name, "points"] += 1
-            df.loc[enemy, "points"] += 1
+            df.at[name, "points"] += 1
+            df.at[enemy, "points"] += 1
 
         # データベースに保存
-        for player in df.index:
-            c.execute("UPDATE results SET matches=?, goal_difference=?, points=? WHERE player=?",
-                      (df.loc[player, "matches"], df.loc[player, "goal_difference"], df.loc[player, "points"], player))
-        conn.commit()
-        st.success('Match recorded!')
-    
+        with conn:
+            for player in df.index:
+                c.execute("UPDATE results SET matches=?, goal_difference=?, points=? WHERE player=?",
+                          (df.at[player, "matches"], df.at[player, "goal_difference"], df.at[player, "points"], player))
+
+        st.success('試合が記録されました！')
+
     except sqlite3.Error as e:
-        st.error(f"SQLite error: {e}")
+        st.error(f"SQLiteエラー: {e}")
     except KeyError as e:
-        st.error(f"KeyError: {e}. Please check player names.")
+        st.error(f"KeyError: {e}. プレイヤー名を確認してください。")
 
 # 各リーグの結果表示
 df_j1 = df[df.index.isin(team_j1)]
@@ -103,17 +109,13 @@ with j3:
     st.dataframe(df_j3)
 
 # リセットボタン
-if st.button('Reset All Data'):
-    try:
-        # チームと結果のテーブルを初期化
-        c.execute("DELETE FROM teams")
-        c.execute("DELETE FROM results")
-        for player in players:
-            c.execute('INSERT INTO results (player, matches, goal_difference, points) VALUES (?, 0, 0, 0)', (player,))
-        conn.commit()
-        st.success('All data has been reset!')
-    except sqlite3.Error as e:
-        st.error(f"Error resetting data: {e}")
+if st.button('データをリセット'):
+    c.execute("DELETE FROM teams")  # チームデータを削除
+    c.execute("DELETE FROM results")  # 結果データを削除
+    for player in players:
+        c.execute('INSERT INTO results (player, matches, goal_difference, points) VALUES (?, 0, 0, 0)', (player,))
+    conn.commit()
+    st.success('すべてのデータがリセットされました！')
 
 # SQLite接続を閉じる
 conn.close()
