@@ -42,17 +42,36 @@ team_j1 = st.multiselect('Select players for Team J1:', players, default=team_j1
 team_j2 = st.multiselect('Select players for Team J2:', players, default=team_j2)
 team_j3 = st.multiselect('Select players for Team J3:', players, default=team_j3)
 
-if st.button('Save Teams'):
-    # 既存のチームデータを削除してから保存
-    c.execute("DELETE FROM teams")
-    for player in team_j1:
-        c.execute("INSERT INTO teams (player, team) VALUES (?, 'j1')", (player,))
-    for player in team_j2:
-        c.execute("INSERT INTO teams (player, team) VALUES (?, 'j2')", (player,))
-    for player in team_j3:
-        c.execute("INSERT INTO teams (player, team) VALUES (?, 'j3')", (player,))
-    conn.commit()
-    st.success('Teams saved!')
+if st.button('試合を記録する'):
+    try:
+        # 試合の記録処理
+        df.loc[name, "matches"] += 1
+        df.loc[enemy, "matches"] += 1
+        df.loc[name, "goal_difference"] += (point - depoint)
+        df.loc[enemy, "goal_difference"] += (depoint - point)
+
+        if (point - depoint) > 0:
+            df.loc[name, "points"] += 3
+        elif (point - depoint) < 0:
+            df.loc[enemy, "points"] += 3
+        else:
+            df.loc[name, "points"] += 1
+            df.loc[enemy, "points"] += 1
+
+        # データベースに保存
+        with conn:
+            for player in df.index:
+                # プレイヤーがresultsテーブルに存在するか確認
+                if player in df.index:
+                    c.execute("UPDATE results SET matches=?, goal_difference=?, points=? WHERE player=?",
+                              (df.loc[player, "matches"], df.loc[player, "goal_difference"], df.loc[player, "points"], player))
+        
+        st.success('Match recorded!')
+    
+    except sqlite3.Error as e:
+        st.error(f"SQLite error: {e}")
+    except KeyError as e:
+        st.error(f"KeyError: {e}. Please check player names.")
 
 # 結果データの読み込み
 df = pd.read_sql_query("SELECT * FROM results", conn, index_col="player")
