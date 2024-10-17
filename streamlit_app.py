@@ -68,25 +68,28 @@ depoint = st.number_input("何点失点しましたか？？", value=0)
 
 if st.button('試合を記録する'):
     try:
-        df.at[name, "matches"] += 1
-        df.at[enemy, "matches"] += 1
-        df.at[name, "goal_difference"] += (point - depoint)
-        df.at[enemy, "goal_difference"] += (depoint - point)
+        df[name]["matches"] += 1
+        df[enemy]["matches"] += 1
+        df[name]["goal_difference"] += (point - depoint)
+        df[enemy]["goal_difference"] += (depoint - point)
 
         if (point - depoint) > 0:
-            df.at[name, "points"] += 3
+            df[name]["points"] += 3
         elif (point - depoint) < 0:
-            df.at[enemy, "points"] += 3
+            df[enemy]["points"] += 3
         else:
-            df.at[name, "points"] += 1
-            df.at[enemy, "points"] += 1
+            df[name]["points"] += 1
+            df[enemy]["points"] += 1
 
-        # データベースに保存
+         データベースに保存
         with conn:
-            for player in df.index:
-                c.execute("UPDATE results SET matches=?, goal_difference=?, points=? WHERE player=?",
-                          (df.at[player, "matches"], df.at[player, "goal_difference"], df.at[player, "points"], player))
+            # 既存のデータを削除
+            c.execute("DELETE FROM results")
 
+            # 新しいデータを挿入
+            for player in df.index:
+                c.execute("INSERT INTO results (player, matches, goal_difference, points) VALUES (?, ?, ?, ?)",
+                          (player, df.at[player, "matches"], df.at[player, "goal_difference"], df.at[player, "points"]))
         st.success('試合が記録されました！')
 
     except sqlite3.Error as e:
