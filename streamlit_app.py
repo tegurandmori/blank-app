@@ -1,3 +1,8 @@
+import streamlit as st
+import pandas as pd
+import sqlite3
+
+
 # データベースの名前
 db_name = "lab_league.db"
 
