@@ -17,6 +17,8 @@ team_j1 = st.multiselect('Select players for Team J1:', players, default=st.sess
 team_j2 = st.multiselect('Select players for Team J2:', players, default=st.session_state['team_data']['team_j2'])
 team_j3 = st.multiselect('Select players for Team J3:', players, default=st.session_state['team_data']['team_j3'])
 
+j1, j2, j3 = st.columns(3)
+
 if st.button('Save Teams'):
     st.session_state['team_data'] = {"team_j1": team_j1, "team_j2": team_j2, "team_j3": team_j3}
     st.success('Teams saved!')
@@ -46,7 +48,6 @@ if st.button('試合を記録する'):
     st.success('Match recorded!')
 
 # 結果の表示
-j1, j2, j3 = st.columns(3)
 df_j1 = st.session_state['result_data'][st.session_state['result_data'].index.isin(team_j1)]
 df_j2 = st.session_state['result_data'][st.session_state['result_data'].index.isin(team_j2)]
 df_j3 = st.session_state['result_data'][st.session_state['result_data'].index.isin(team_j3)]
