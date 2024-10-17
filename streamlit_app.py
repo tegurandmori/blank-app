@@ -55,14 +55,19 @@ if st.button('チームを保存'):
     conn.commit()
     st.success('チームが保存されました！')
 
+# 結果データの初期化
+for player in players:
+    c.execute('INSERT OR IGNORE INTO results (player, matches, goal_difference, points) VALUES (?, 0, 0, 0)', (player,))
+conn.commit()
+
 # 結果データの読み込み
 df = pd.read_sql_query("SELECT * FROM results", conn, index_col="player")
 
-# 試合の記録
+# チーム選択
 league = st.selectbox("あなたの所属リーグを教えてください", ["j1", "j2", "j3"])
-team = {"team_j1": team_j1, "team_j2": team_j2, "team_j3": team_j3}
-name = st.selectbox("あなたの名前を教えてください", team["team_" + league])
-enemy = st.selectbox("相手の名前を教えてください", team["team_" + league])
+team = {"team_j1": [], "team_j2": [], "team_j3": []}  # 仮のチームデータ
+name = st.selectbox("あなたの名前を教えてください", df.index.tolist())
+enemy = st.selectbox("相手の名前を教えてください", df.index.tolist())
 point = st.number_input("何点得点しましたか？？", value=0)
 depoint = st.number_input("何点失点しましたか？？", value=0)
 
@@ -85,6 +90,7 @@ if st.button('試合を記録する'):
             else:
                 df.at[name, "points"] += 1
                 df.at[enemy, "points"] += 1
+                
          #データベースに保存
         with conn:
             # 既存のデータを削除
