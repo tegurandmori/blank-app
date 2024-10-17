@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS results (
 
 # 結果データの初期化
 for player in players:
-    c.execute('INSERT OR IGNORE INTO results (player, matches, goal_difference, points) VALUES (?, 0, 0, 0)', (player,))
+    c.execute('INSERT OR IGNORE INTO results (player,matches, goal_difference, points) VALUES (?, 0, 0, 0)', (player,))
 conn.commit()
 
 # チームデータの読み込み
@@ -64,6 +64,9 @@ name = st.selectbox("あなたの名前を教えてください", team["team_" +
 enemy = st.selectbox("相手の名前を教えてください", team["team_" + league])
 point = st.number_input("何点得点しましたか？？", value=0)
 depoint = st.number_input("何点失点しましたか？？", value=0)
+
+df = df[:len(players)]
+print(df)
 
 if st.button('試合を記録する'):
     try:
