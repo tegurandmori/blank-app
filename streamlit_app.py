@@ -1,3 +1,8 @@
+import streamlit as st
+import pandas as pd
+import sqlite3
+
+
 # SQLiteデータベースに接続（なければ自動作成されます）
 conn = sqlite3.connect('lab_league.db')
 c = conn.cursor()
