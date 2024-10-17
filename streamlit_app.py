@@ -1,41 +1,46 @@
-import streamlit as st
-import pandas as pd
-import sqlite3
+# データベースの名前
+db_name = "lab_league.db"
 
-# SQLiteデータベースに接続（なければ自動作成されます）
-conn = sqlite3.connect('lab_league.db')
-c = conn.cursor()
-"""
+# SQLiteデータベースに接続
+def create_connection(db_file):
+    conn = None
+    try:
+        conn = sqlite3.connect(db_file)
+    except sqlite3.Error as e:
+        st.error(f"SQLite error: {e}")
+    return conn
+
+conn = create_connection(db_name)
+
 # プレイヤーリスト
 players = ["まつか", "くま", "がい", "さとか", "やまし", "morning", "鬼", "teguramori", "はまじ", "おじ", "zkonma", "king", "ざき", "いと"]
 
-# チームテーブルが存在しない場合は作成
-c.execute('''
-CREATE TABLE IF NOT EXISTS teams (
-    player TEXT,
-    team TEXT
-)
-''')
+# チームテーブルと結果テーブルが存在しない場合は作成
+with conn:
+    conn.execute('''
+    CREATE TABLE IF NOT EXISTS teams (
+        player TEXT,
+        team TEXT
+    )
+    ''')
+    conn.execute('''
+    CREATE TABLE IF NOT EXISTS results (
+        player TEXT PRIMARY KEY,
+        matches INTEGER,
+        goal_difference INTEGER,
+        points INTEGER
+    )
+    ''')
 
-# 結果テーブルが存在しない場合は作成
-c.execute('''
-CREATE TABLE IF NOT EXISTS results (
-    player TEXT,
-    matches INTEGER,
-    goal_difference INTEGER,
-    points INTEGER
-)
-''')
-
-# 結果データの初期化
-for player in players:
-    c.execute('INSERT OR IGNORE INTO results (player, matches, goal_difference, points) VALUES (?, 0, 0, 0)', (player,))
-conn.commit()
+    # 結果データの初期化
+    for player in players:
+        conn.execute('INSERT OR IGNORE INTO results (player, matches, goal_difference, points) VALUES (?, 0, 0, 0)', (player,))
+    conn.commit()
 
 # チームデータの読み込み
-team_j1 = [row[0] for row in c.execute("SELECT player FROM teams WHERE team='j1'").fetchall()]
-team_j2 = [row[0] for row in c.execute("SELECT player FROM teams WHERE team='j2'").fetchall()]
-team_j3 = [row[0] for row in c.execute("SELECT player FROM teams WHERE team='j3'").fetchall()]
+team_j1 = [row[0] for row in conn.execute("SELECT player FROM teams WHERE team='j1'").fetchall()]
+team_j2 = [row[0] for row in conn.execute("SELECT player FROM teams WHERE team='j2'").fetchall()]
+team_j3 = [row[0] for row in conn.execute("SELECT player FROM teams WHERE team='j3'").fetchall()]
 
 # チーム選択
 team_j1 = st.multiselect('Select players for Team J1:', players, default=team_j1)
@@ -44,14 +49,14 @@ team_j3 = st.multiselect('Select players for Team J3:', players, default=team_j3
 
 if st.button('Save Teams'):
     # 既存のチームデータを削除してから保存
-    c.execute("DELETE FROM teams")
-    for player in team_j1:
-        c.execute("INSERT INTO teams (player, team) VALUES (?, 'j1')", (player,))
-    for player in team_j2:
-        c.execute("INSERT INTO teams (player, team) VALUES (?, 'j2')", (player,))
-    for player in team_j3:
-        c.execute("INSERT INTO teams (player, team) VALUES (?, 'j3')", (player,))
-    conn.commit()
+    with conn:
+        conn.execute("DELETE FROM teams")
+        for player in team_j1:
+            conn.execute("INSERT INTO teams (player, team) VALUES (?, 'j1')", (player,))
+        for player in team_j2:
+            conn.execute("INSERT INTO teams (player, team) VALUES (?, 'j2')", (player,))
+        for player in team_j3:
+            conn.execute("INSERT INTO teams (player, team) VALUES (?, 'j3')", (player,))
     st.success('Teams saved!')
 
 # 結果データの読み込み
@@ -66,22 +71,25 @@ point = st.number_input("何点得点しましたか？？", value=0)
 depoint = st.number_input("何点失点しましたか？？", value=0)
 
 if st.button('試合を記録する'):
+    # 試合の記録処理
     df.loc[name, "matches"] += 1
     df.loc[enemy, "matches"] += 1
     df.loc[name, "goal_difference"] += (point - depoint)
     df.loc[enemy, "goal_difference"] += (depoint - point)
+    
     if (point - depoint) > 0:
         df.loc[name, "points"] += 3
     elif (point - depoint) < 0:
         df.loc[enemy, "points"] += 3
-    elif (point - depoint) == 0:
+    else:
         df.loc[name, "points"] += 1
         df.loc[enemy, "points"] += 1
+    
     # データベースに保存
-    for player in df.index:
-        c.execute("UPDATE results SET matches=?, goal_difference=?, points=? WHERE player=?",
-                  (df.loc[player, "matches"], df.loc[player, "goal_difference"], df.loc[player, "points"], player))
-    conn.commit()
+    with conn:
+        for player in df.index:
+            conn.execute("UPDATE results SET matches=?, goal_difference=?, points=? WHERE player=?",
+                          (df.loc[player, "matches"], df.loc[player, "goal_difference"], df.loc[player, "points"], player))
     st.success('Match recorded!')
 
 # 各リーグの結果表示
@@ -105,4 +113,3 @@ with j3:
 
 # SQLite接続を閉じる
 conn.close()
-"""
