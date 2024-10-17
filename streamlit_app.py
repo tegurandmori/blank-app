@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import sqlite3
 
-
 # SQLiteデータベースに接続（なければ自動作成されます）
 conn = sqlite3.connect('lab_league.db')
 c = conn.cursor()
@@ -28,6 +27,11 @@ CREATE TABLE IF NOT EXISTS results (
 )
 ''')
 
+# 結果データの初期化
+for player in players:
+    c.execute('INSERT OR IGNORE INTO results (player, matches, goal_difference, points) VALUES (?, 0, 0, 0)', (player,))
+conn.commit()
+
 # チームデータの読み込み
 team_j1 = [row[0] for row in c.execute("SELECT player FROM teams WHERE team='j1'").fetchall()]
 team_j2 = [row[0] for row in c.execute("SELECT player FROM teams WHERE team='j2'").fetchall()]
@@ -50,50 +54,38 @@ if st.button('チームを保存'):
     conn.commit()
     st.success('チームが保存されました！')
 
-# 結果データの初期化
-for player in players:
-    c.execute('INSERT OR IGNORE INTO results (player, matches, goal_difference, points) VALUES (?, 0, 0, 0)', (player,))
-conn.commit()
-
 # 結果データの読み込み
 df = pd.read_sql_query("SELECT * FROM results", conn, index_col="player")
 
-# チーム選択
+# 試合の記録
 league = st.selectbox("あなたの所属リーグを教えてください", ["j1", "j2", "j3"])
-team = {"team_j1": [], "team_j2": [], "team_j3": []}  # 仮のチームデータ
-name = st.selectbox("あなたの名前を教えてください", df.index.tolist())
-enemy = st.selectbox("相手の名前を教えてください", df.index.tolist())
+team = {"team_j1": team_j1, "team_j2": team_j2, "team_j3": team_j3}
+name = st.selectbox("あなたの名前を教えてください", team["team_" + league])
+enemy = st.selectbox("相手の名前を教えてください", team["team_" + league])
 point = st.number_input("何点得点しましたか？？", value=0)
 depoint = st.number_input("何点失点しましたか？？", value=0)
+
 if st.button('試合を記録する'):
     try:
-        # プレイヤーがdfに存在するか確認
-        if name not in df.index or enemy not in df.index:
-            st.error(f"選択されたプレイヤー名 '{name}' または '{enemy}' が見つかりません。")
+        df.at[name, "matches"] += 1
+        df.at[enemy, "matches"] += 1
+        df.at[name, "goal_difference"] += (point - depoint)
+        df.at[enemy, "goal_difference"] += (depoint - point)
+
+        if (point - depoint) > 0:
+            df.at[name, "points"] += 3
+        elif (point - depoint) < 0:
+            df.at[enemy, "points"] += 3
         else:
-            # 試合の記録処理
-            df.at[name, "matches"] += 1
-            df.at[enemy, "matches"] += 1
-            df.at[name, "goal_difference"] += (point - depoint)
-            df.at[enemy, "goal_difference"] += (depoint - point)
+            df.at[name, "points"] += 1
+            df.at[enemy, "points"] += 1
 
-            if (point - depoint) > 0:
-                df.at[name, "points"] += 3
-            elif (point - depoint) < 0:
-                df.at[enemy, "points"] += 3
-            else:
-                df.at[name, "points"] += 1
-                df.at[enemy, "points"] += 1
-                
-         #データベースに保存
+        # データベースに保存
         with conn:
-            # 既存のデータを削除
-            c.execute("DELETE FROM results")
-
-            # 新しいデータを挿入
             for player in df.index:
-                c.execute("INSERT INTO results (player, matches, goal_difference, points) VALUES (?, ?, ?, ?)",
-                          (player, df.at[player, "matches"], df.at[player, "goal_difference"], df.at[player, "points"]))
+                c.execute("UPDATE results SET matches=?, goal_difference=?, points=? WHERE player=?",
+                          (df.at[player, "matches"], df.at[player, "goal_difference"], df.at[player, "points"], player))
+
         st.success('試合が記録されました！')
 
     except sqlite3.Error as e:
