@@ -28,11 +28,6 @@ CREATE TABLE IF NOT EXISTS results (
 )
 ''')
 
-# 結果データの初期化
-for player in players:
-    c.execute('INSERT OR IGNORE INTO results (player, matches, goal_difference, points) VALUES (?, 0, 0, 0)', (player,))
-conn.commit()
-
 # チームデータの読み込み
 team_j1 = [row[0] for row in c.execute("SELECT player FROM teams WHERE team='j1'").fetchall()]
 team_j2 = [row[0] for row in c.execute("SELECT player FROM teams WHERE team='j2'").fetchall()]
@@ -70,7 +65,6 @@ name = st.selectbox("あなたの名前を教えてください", df.index.tolis
 enemy = st.selectbox("相手の名前を教えてください", df.index.tolist())
 point = st.number_input("何点得点しましたか？？", value=0)
 depoint = st.number_input("何点失点しましたか？？", value=0)
-
 if st.button('試合を記録する'):
     try:
         # プレイヤーがdfに存在するか確認
