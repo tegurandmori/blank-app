@@ -37,6 +37,8 @@ team_j1 = [row[0] for row in c.execute("SELECT player FROM teams WHERE team='j1'
 team_j2 = [row[0] for row in c.execute("SELECT player FROM teams WHERE team='j2'").fetchall()]
 team_j3 = [row[0] for row in c.execute("SELECT player FROM teams WHERE team='j3'").fetchall()]
 
+st.title("Lab league")
+
 # チーム選択
 team_j1 = st.multiselect('Select players for Team J1:', players, default=team_j1)
 team_j2 = st.multiselect('Select players for Team J2:', players, default=team_j2)
