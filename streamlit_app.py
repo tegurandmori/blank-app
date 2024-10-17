@@ -81,7 +81,7 @@ if st.button('試合を記録する'):
             df[name]["points"] += 1
             df[enemy]["points"] += 1
 
-         データベースに保存
+         #データベースに保存
         with conn:
             # 既存のデータを削除
             c.execute("DELETE FROM results")
