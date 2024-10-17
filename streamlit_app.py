@@ -1,100 +1,62 @@
 import streamlit as st
 import pandas as pd
-import os
-
-
-csv_file = "test.csv"
-result_file = "result.csv"
 
 st.title("e-football Nakayoshilab league")
 
 players = ["まつか","くま","がい","さとか","やまし","morning","鬼","teguramori","はまじ","おじ","zkonma","king","ざき","いと"]
 
-if os.path.exists(csv_file):
-    df = pd.read_csv(csv_file)
-    team_j1 = df[df['team'] == 'j1']['player'].tolist()
-    team_j2 = df[df['team'] == 'j2']['player'].tolist()
-    team_j3 = df[df['team'] == 'j3']['player'].tolist()
-else:
-    team_j1, team_j2, team_j3 = [], [], []
+# 初期化
+if 'team_data' not in st.session_state:
+    st.session_state['team_data'] = {'team_j1': [], 'team_j2': [], 'team_j3': []}
+if 'result_data' not in st.session_state:
+    columns = ["Matches", "Goal difference", "Points"]
+    st.session_state['result_data'] = pd.DataFrame(0, index=players, columns=columns)
 
-team = {}
-
-team_j1 = st.multiselect('Select players for Team J1:', players, default=team_j1)
-team_j2 = st.multiselect('Select players for Team J2:', players, default=team_j2)
-team_j3 = st.multiselect('Select players for Team J3:', players, default=team_j3)
-
-team["team_j1"] = team_j1
-team["team_j2"] = team_j2
-team["team_j3"] = team_j3
+# チーム選択
+team_j1 = st.multiselect('Select players for Team J1:', players, default=st.session_state['team_data']['team_j1'])
+team_j2 = st.multiselect('Select players for Team J2:', players, default=st.session_state['team_data']['team_j2'])
+team_j3 = st.multiselect('Select players for Team J3:', players, default=st.session_state['team_data']['team_j3'])
 
 if st.button('Save Teams'):
-    team_data = {'player': team_j1 + team_j2 + team_j3,
-                 'team': ['j1']*len(team_j1) + ['j2']*len(team_j2) + ['j3']*len(team_j3)}
-    df = pd.DataFrame(team_data)
-    df.to_csv(csv_file, index=False)
+    st.session_state['team_data'] = {"team_j1": team_j1, "team_j2": team_j2, "team_j3": team_j3}
     st.success('Teams saved!')
 
-
-j1, j2, j3 = st.columns(3)
-
-if os.path.exists(result_file):
-    df = pd.read_csv(result_file)
-    df = df.set_index("Unnamed: 0")
-else:
-    columns = ["Matches","Goal difference","Points"]
-    df = pd.DataFrame(0, index=players, columns = columns)
-
-
-league = st.selectbox("あなたの所属リーグを教えてください",["j1","j2","j3"])
-list = ("team_" + str(league))
-name = st.selectbox("あなたの名前を教えてください",team[list])
-enemy = st.selectbox("相手の名前を教えてください",team[list])
+# 試合の記録
+league = st.selectbox("あなたの所属リーグを教えてください", ["j1", "j2", "j3"])
+team = st.session_state['team_data']
+name = st.selectbox("あなたの名前を教えてください", team["team_" + league])
+enemy = st.selectbox("相手の名前を教えてください", team["team_" + league])
 point = st.number_input("何点得点しましたか？？", value=0)
 depoint = st.number_input("何点失点しましたか？？", value=0)
 
 if st.button('試合を記録する'):
-    df["Matches"][name] += 1
-    df["Matches"][enemy] += 1
-    df["Goal difference"][name] += (point - depoint)
-    df["Goal difference"][enemy] += (depoint - point)
+    result_data = st.session_state['result_data']
+    result_data["Matches"][name] += 1
+    result_data["Matches"][enemy] += 1
+    result_data["Goal difference"][name] += (point - depoint)
+    result_data["Goal difference"][enemy] += (depoint - point)
     if (point - depoint) > 0:
-        df["Points"][name] += 3
+        result_data["Points"][name] += 3
     elif (point - depoint) < 0:
-        df["Points"][name] += 3
+        result_data["Points"][enemy] += 3
     elif (point - depoint) == 0:
-        df["Points"][name] += 1
-        df["Points"][enemy] += 1
-    else:
-        st.erro("Error")
+        result_data["Points"][name] += 1
+        result_data["Points"][enemy] += 1
+    st.session_state['result_data'] = result_data
+    st.success('Match recorded!')
 
-    print(df)
-    df.to_csv(result_file, index=True)
-    st.success('matches saved!')
-
-df_j1 = df[df.index.isin(team_j1)]
-df_j2 = df[df.index.isin(team_j2)]
-df_j3 = df[df.index.isin(team_j3)]
+# 結果の表示
+j1, j2, j3 = st.columns(3)
+df_j1 = st.session_state['result_data'][st.session_state['result_data'].index.isin(team_j1)]
+df_j2 = st.session_state['result_data'][st.session_state['result_data'].index.isin(team_j2)]
+df_j3 = st.session_state['result_data'][st.session_state['result_data'].index.isin(team_j3)]
 
 with j1:
     st.header("J1 league")
-    st.write("This is J1 league")
     st.dataframe(df_j1)
-
-
-    #st.write(f'You selected: {selected_option}')
-
 with j2:
     st.header("J2 league")
-    st.write("This is J2 league")
     st.dataframe(df_j2)
-    #st.write("The team are:",j1_list)
-    #st.write(f'You selected: {selected_option}')
-
 with j3:
     st.header("J3 league")
-    st.write("This is J3 league")
     st.dataframe(df_j3)
-    #st.write("The team are:",j1_list)
-    #st.write(f'You selected: {selected_option}')
-
