@@ -73,18 +73,18 @@ if st.button('試合を記録する'):
             st.error(f"選択されたプレイヤー名 '{name}' または '{enemy}' が見つかりません。")
         else:
             # 試合の記録処理
-            df.loc[name, "matches"] += 1
-            df.loc[enemy, "matches"] += 1
-            df.loc[name, "goal_difference"] += (point - depoint)
-            df.loc[enemy, "goal_difference"] += (depoint - point)
+            df.at[name, "matches"] += 1
+            df.at[enemy, "matches"] += 1
+            df.at[name, "goal_difference"] += (point - depoint)
+            df.at[enemy, "goal_difference"] += (depoint - point)
 
             if (point - depoint) > 0:
-                df.loc[name, "points"] += 3
+                df.at[name, "points"] += 3
             elif (point - depoint) < 0:
-                df.loc[enemy, "points"] += 3
+                df.at[enemy, "points"] += 3
             else:
-                df.loc[name, "points"] += 1
-                df.loc[enemy, "points"] += 1
+                df.at[name, "points"] += 1
+                df.at[enemy, "points"] += 1
          #データベースに保存
         with conn:
             # 既存のデータを削除
