@@ -61,49 +61,16 @@ if st.button('試合を記録する'):
             df.loc[enemy, "points"] += 1
 
         # データベースに保存
-        with conn:
-            for player in df.index:
-                # プレイヤーがresultsテーブルに存在するか確認
-                if player in df.index:
-                    c.execute("UPDATE results SET matches=?, goal_difference=?, points=? WHERE player=?",
-                              (df.loc[player, "matches"], df.loc[player, "goal_difference"], df.loc[player, "points"], player))
-        
+        for player in df.index:
+            c.execute("UPDATE results SET matches=?, goal_difference=?, points=? WHERE player=?",
+                      (df.loc[player, "matches"], df.loc[player, "goal_difference"], df.loc[player, "points"], player))
+        conn.commit()
         st.success('Match recorded!')
     
     except sqlite3.Error as e:
         st.error(f"SQLite error: {e}")
     except KeyError as e:
         st.error(f"KeyError: {e}. Please check player names.")
-
-# 結果データの読み込み
-df = pd.read_sql_query("SELECT * FROM results", conn, index_col="player")
-
-# 試合の記録
-league = st.selectbox("あなたの所属リーグを教えてください", ["j1", "j2", "j3"])
-team = {"team_j1": team_j1, "team_j2": team_j2, "team_j3": team_j3}
-name = st.selectbox("あなたの名前を教えてください", team["team_" + league])
-enemy = st.selectbox("相手の名前を教えてください", team["team_" + league])
-point = st.number_input("何点得点しましたか？？", value=0)
-depoint = st.number_input("何点失点しましたか？？", value=0)
-
-if st.button('試合を記録する'):
-    df.loc[name, "matches"] += 1
-    df.loc[enemy, "matches"] += 1
-    df.loc[name, "goal_difference"] += (point - depoint)
-    df.loc[enemy, "goal_difference"] += (depoint - point)
-    if (point - depoint) > 0:
-        df.loc[name, "points"] += 3
-    elif (point - depoint) < 0:
-        df.loc[enemy, "points"] += 3
-    elif (point - depoint) == 0:
-        df.loc[name, "points"] += 1
-        df.loc[enemy, "points"] += 1
-    # データベースに保存
-    for player in df.index:
-        c.execute("UPDATE results SET matches=?, goal_difference=?, points=? WHERE player=?",
-                  (df.loc[player, "matches"], df.loc[player, "goal_difference"], df.loc[player, "points"], player))
-    conn.commit()
-    st.success('Match recorded!')
 
 # 各リーグの結果表示
 df_j1 = df[df.index.isin(team_j1)]
@@ -136,7 +103,6 @@ if st.button('Reset All Data'):
         st.success('All data has been reset!')
     except sqlite3.Error as e:
         st.error(f"Error resetting data: {e}")
-
 
 # SQLite接続を閉じる
 conn.close()
