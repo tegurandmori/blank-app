@@ -109,9 +109,9 @@ if st.button('試合を記録する'):
 df_j1 = df[df.index.isin(team_j1)].astype(str)  # データ型を明示的に文字列に変換
 df_j2 = df[df.index.isin(team_j2)].astype(str)
 df_j3 = df[df.index.isin(team_j3)].astype(str)
-df_j1 = df_j1.sort_values("points", ascending=False)
-df_j2 = df_j2.sort_values("points", ascending=False)
-df_j3 = df_j3.sort_values("points", ascending=False)
+df_j1 = df_j1.sort_values(["points","goal_difference"], ascending=False)
+df_j2 = df_j2.sort_values(["points","goal_difference"], ascending=False)
+df_j3 = df_j3.sort_values(["points","goal_difference"], ascending=False)
 
 league_list = {"j1":0,"j2":1,"j3":2}
 
