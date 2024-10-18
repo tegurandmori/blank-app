@@ -109,20 +109,25 @@ if st.button('試合を記録する'):
 df_j1 = df[df.index.isin(team_j1)].astype(str)  # データ型を明示的に文字列に変換
 df_j2 = df[df.index.isin(team_j2)].astype(str)
 df_j3 = df[df.index.isin(team_j3)].astype(str)
+df_j1 = df_j1.sort_values("points", ascending=False)
+df_j2 = df_j2.sort_values("points", ascending=False)
+df_j3 = df_j3.sort_values("points", ascending=False)
 
-j1, j2, j3 = st.columns(3)
+league_list = {"j1":0,"j2":1,"j3":2}
 
-with j1:
-    st.header("J1 league")
-    st.dataframe(df_j1)
+#j1, j2, j3 = st.columns(3)
 
-with j2:
-    st.header("J2 league")
-    st.dataframe(df_j2)
 
-with j3:
-    st.header("J3 league")
-    st.dataframe(df_j3)
+st.header("J1 league")
+st.dataframe(df_j1)
+
+
+st.header("J2 league")
+st.dataframe(df_j2)
+
+
+st.header("J3 league")
+st.dataframe(df_j3)
 
 # リセットボタン
 if st.button('データをリセット'):
